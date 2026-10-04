@@ -1,0 +1,404 @@
+```html
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tool Luyện Nghe Song Ngữ</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        
+        /* Custom scrollbar for text area and file list */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        
+        .active-file { border-left: 4px solid #3b82f6; background-color: #eff6ff; }
+        .pulse-text { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="text-gray-800 antialiased min-h-screen p-4 md:p-8 flex justify-center">
+
+    <div class="w-full max-w-3xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col">
+        
+        <!-- Header -->
+        <div class="bg-blue-600 text-white p-5 text-center">
+            <h1 class="text-2xl font-bold flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clip-rule="evenodd" />
+                </svg>
+                Trạm Nghe Audio English
+            </h1>
+            <p class="text-blue-100 text-sm mt-1">Lưu trữ vĩnh viễn - Lặp lại liên tục</p>
+        </div>
+
+        <!-- Content Area -->
+        <div class="p-5 flex-grow flex flex-col gap-6">
+            
+            <!-- Upload Section -->
+            <div class="border-2 border-dashed border-blue-300 bg-blue-50 rounded-xl p-6 text-center hover:bg-blue-100 transition-colors">
+                <label for="fileInput" class="cursor-pointer flex flex-col items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-blue-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <span class="font-semibold text-blue-700 text-lg">Tải lên file Excel (.xlsx)</span>
+                    <span class="text-sm text-gray-500 mt-1">Cột A: Tiếng Việt, Cột B: Tiếng Anh</span>
+                </label>
+                <input type="file" id="fileInput" accept=".xlsx, .xls" class="hidden" />
+            </div>
+
+            <!-- File List Section -->
+            <div>
+                <h3 class="font-semibold text-gray-700 flex items-center gap-2 mb-3 text-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                      <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" />
+                    </svg>
+                    Danh sách tài liệu đã lưu
+                </h3>
+                <div id="fileListContainer" class="bg-gray-50 border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
+                    <!-- Danh sách file sẽ được chèn bằng JS -->
+                    <div class="text-center p-4 text-sm text-gray-400 italic" id="emptyListMsg">Chưa có tài liệu nào. Hãy tải lên file Excel.</div>
+                </div>
+            </div>
+
+            <!-- Editor & Player Section -->
+            <div class="flex flex-col flex-grow bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                
+                <!-- Status Bar -->
+                <div class="bg-gray-100 p-3 flex justify-between items-center border-b border-gray-200">
+                    <span id="currentFileName" class="font-medium text-gray-600 truncate text-sm">Chưa chọn file</span>
+                    <span id="status" class="text-sm font-semibold text-gray-500">Đang chờ...</span>
+                </div>
+                
+                <!-- Text Area -->
+                <textarea id="inputText" rows="10" oninput="autoSaveCurrentText()" placeholder="Nội dung sẽ hiển thị ở đây. Bạn có thể chỉnh sửa trực tiếp..." class="w-full p-4 resize-none outline-none text-gray-700 bg-white flex-grow leading-relaxed"></textarea>
+                
+                <!-- Controls -->
+                <div class="p-4 bg-gray-50 flex gap-3 border-t border-gray-200">
+                    <button onclick="playAudio()" id="playBtn" class="flex-1 bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Phát Lặp Lại
+                    </button>
+                    <button onclick="stopAudio()" class="bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-bold py-3 px-5 rounded-lg shadow-md transition flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ---------------- THIẾT LẬP CƠ BẢN ----------------
+        const STORAGE_KEY = 'english_learning_files_v2';
+        let savedFiles = [];
+        let currentFileId = null;
+        
+        // Cấu hình âm thanh
+        let synth = window.speechSynthesis;
+        let voices = [];
+        let isPlaying = false;
+        
+        const uiStatus = document.getElementById('status');
+        const uiFileList = document.getElementById('fileListContainer');
+        const uiEmptyMsg = document.getElementById('emptyListMsg');
+        const uiTextArea = document.getElementById('inputText');
+        const uiCurrentFileName = document.getElementById('currentFileName');
+        const uiFileInput = document.getElementById('fileInput');
+
+        // Load danh sách giọng đọc
+        function loadVoices() { voices = synth.getVoices(); }
+        loadVoices();
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = loadVoices;
+        }
+
+        // Khởi chạy khi load trang
+        window.onload = function() {
+            loadFilesFromStorage();
+            renderFileList();
+            // Nếu có file, tự động chọn file đầu tiên
+            if (savedFiles.length > 0) {
+                selectFile(savedFiles[0].id);
+            }
+        };
+
+        // ---------------- QUẢN LÝ DỮ LIỆU LOCALSTORAGE ----------------
+        function loadFilesFromStorage() {
+            try {
+                const data = localStorage.getItem(STORAGE_KEY);
+                if (data) savedFiles = JSON.parse(data);
+            } catch (e) {
+                console.error("Lỗi đọc dữ liệu:", e);
+                savedFiles = [];
+            }
+        }
+
+        function saveFilesToStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(savedFiles));
+        }
+
+        // Tự động lưu khi người dùng chỉnh sửa trong Textarea
+        function autoSaveCurrentText() {
+            if (!currentFileId) return;
+            const text = uiTextArea.value;
+            const fileIndex = savedFiles.findIndex(f => f.id === currentFileId);
+            if (fileIndex !== -1) {
+                savedFiles[fileIndex].data = text;
+                saveFilesToStorage();
+            }
+        }
+
+        // ---------------- GIAO DIỆN DANH SÁCH FILE ----------------
+        function renderFileList() {
+            // Xóa hết danh sách cũ trừ thông báo rỗng
+            Array.from(uiFileList.children).forEach(child => {
+                if(child.id !== 'emptyListMsg') child.remove();
+            });
+
+            if (savedFiles.length === 0) {
+                uiEmptyMsg.style.display = 'block';
+                return;
+            }
+            uiEmptyMsg.style.display = 'none';
+
+            // Tạo các item mới
+            savedFiles.forEach(file => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = `flex justify-between items-center p-3 border-b border-gray-200 cursor-pointer hover:bg-blue-50 transition ${file.id === currentFileId ? 'active-file' : ''}`;
+                
+                // Vùng click để chọn
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'flex-grow overflow-hidden pr-2';
+                infoDiv.onclick = () => selectFile(file.id);
+                infoDiv.innerHTML = `
+                    <div class="font-medium text-gray-800 truncate">${file.name}</div>
+                    <div class="text-xs text-gray-500">${file.date} - ${file.data.split('\n').filter(l=>l.trim()!=='').length} câu</div>
+                `;
+
+                // Nút xóa
+                const delBtn = document.createElement('button');
+                delBtn.className = 'p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition';
+                delBtn.onclick = (e) => {
+                    e.stopPropagation(); // Ngăn sự kiện click lan ra infoDiv
+                    deleteFile(file.id);
+                };
+                delBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                `;
+
+                itemDiv.appendChild(infoDiv);
+                itemDiv.appendChild(delBtn);
+                uiFileList.appendChild(itemDiv);
+            });
+        }
+
+        function selectFile(id) {
+            currentFileId = id;
+            const file = savedFiles.find(f => f.id === id);
+            if (file) {
+                uiTextArea.value = file.data;
+                uiCurrentFileName.textContent = file.name;
+                stopAudio(); // Dừng đọc nếu đang đọc file cũ
+            }
+            renderFileList(); // Render lại để cập nhật CSS active
+        }
+
+        function deleteFile(id) {
+            if(!confirm("Bạn có chắc chắn muốn xóa file này?")) return;
+            
+            savedFiles = savedFiles.filter(f => f.id !== id);
+            saveFilesToStorage();
+            
+            // Nếu xóa file đang chọn, clear màn hình
+            if (currentFileId === id) {
+                currentFileId = null;
+                uiTextArea.value = '';
+                uiCurrentFileName.textContent = 'Chưa chọn file';
+                stopAudio();
+                
+                // Chọn lại file đầu tiên nếu còn
+                if(savedFiles.length > 0) {
+                    selectFile(savedFiles[0].id);
+                }
+            }
+            renderFileList();
+        }
+
+        // ---------------- XỬ LÝ UPLOAD EXCEL ----------------
+        uiFileInput.addEventListener('change', function(e) {
+            let file = e.target.files[0];
+            if (!file) return;
+
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let data = new Uint8Array(e.target.result);
+                    let workbook = XLSX.read(data, {type: 'array'});
+                    let firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    
+                    let jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
+                    let sentences = [];
+                    
+                    for (let i = 0; i < jsonData.length; i++) {
+                        let row = jsonData[i];
+                        // Bỏ qua dòng tiêu đề nếu chứa chữ "Tiếng Việt" hoặc "English" (tùy chọn)
+                        if(i === 0 && (String(row[0]).toLowerCase().includes("việt") || String(row[0]).toLowerCase().includes("english"))) continue;
+
+                        if (row && row.length >= 2 && row[0] && row[1]) {
+                            let vi = String(row[0]).trim();
+                            let en = String(row[1]).trim();
+                            if(vi && en) sentences.push(vi + " | " + en);
+                        }
+                    }
+
+                    if(sentences.length > 0) {
+                        const newFile = {
+                            id: Date.now().toString(),
+                            name: file.name,
+                            date: new Date().toLocaleDateString('vi-VN'),
+                            data: sentences.join('\n')
+                        };
+                        
+                        savedFiles.push(newFile);
+                        saveFilesToStorage();
+                        selectFile(newFile.id);
+                        
+                        // Reset input file để có thể tải lại cùng 1 file
+                        uiFileInput.value = ''; 
+                    } else {
+                        alert("Không tìm thấy dữ liệu ở Cột A và Cột B trong file Excel!");
+                    }
+                } catch (error) {
+                    alert("Lỗi khi đọc file Excel. Vui lòng đảm bảo file không bị hỏng.");
+                    console.error(error);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        // ---------------- HỆ THỐNG ĐỌC ÂM THANH ----------------
+        function updateStatus(text, type = 'normal') {
+            uiStatus.innerHTML = text;
+            if(type === 'playing' || type === 'looping') {
+                uiStatus.className = "text-sm font-bold text-green-600 pulse-text";
+            } else if (type === 'stopped') {
+                uiStatus.className = "text-sm font-semibold text-red-500";
+            } else {
+                uiStatus.className = "text-sm font-semibold text-gray-500";
+            }
+        }
+
+        async function playAudio() {
+            if (isPlaying) return;
+            
+            let text = uiTextArea.value.trim();
+            if(!text) { 
+                alert("Vui lòng chọn một file có dữ liệu hoặc gõ nội dung vào ô để nghe!"); 
+                return; 
+            }
+
+            synth.cancel(); 
+            isPlaying = true;
+            document.getElementById('playBtn').classList.add('opacity-75', 'cursor-not-allowed');
+            
+            let lines = text.split('\n').filter(line => line.trim() !== '');
+
+            // Vòng lặp liên tục
+            while (isPlaying) {
+                updateStatus("▶ Đang đọc...", 'playing');
+                
+                for (let line of lines) {
+                    if (!isPlaying) break; 
+                    
+                    let parts = line.split('|');
+                    if (parts.length >= 2) {
+                        let viText = parts[0].trim();
+                        let enText = parts[1].trim();
+
+                        await speakSentence(viText, 'vi-VN', 1.0); 
+                        if (!isPlaying) break;
+                        
+                        // Nghỉ xíu trước khi đọc tiếng Anh cho tự nhiên
+                        await sleep(300); 
+
+                        await speakSentence(enText, 'en-US', 0.85); 
+                        if (!isPlaying) break;
+
+                        // Thời gian nghỉ giữa các cặp câu (1.5s để người nghe nhẩm theo)
+                        await sleep(1500); 
+                    }
+                }
+                
+                // Kết thúc 1 vòng, chuẩn bị lặp lại
+                if (isPlaying) {
+                    updateStatus("⏳ Đang chuẩn bị vòng lặp mới...", 'looping');
+                    await sleep(2500); // Nghỉ 2.5s trước khi lặp lại vòng mới từ đầu
+                }
+            }
+        }
+
+        function speakSentence(text, lang, rate) {
+            return new Promise((resolve) => {
+                let utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = lang;
+                utterance.rate = rate; 
+                
+                // Tìm giọng ưu tiên
+                let voice = voices.find(v => v.lang.includes(lang) || v.lang.includes(lang.replace('-', '_')));
+                if(voice) utterance.voice = voice;
+
+                // Xử lý khi đọc xong hoặc có lỗi
+                utterance.onend = resolve;
+                utterance.onerror = (e) => {
+                    console.warn("Speech error:", e);
+                    resolve(); // Phải resolve để tránh bị kẹt promise
+                };
+                
+                // Chữa cháy cho một số lỗi tự ngắt của API Speech trên mobile
+                let fallbackTimer = setTimeout(() => {
+                   synth.cancel();
+                   resolve();
+                }, 10000); // Timeout 10s cho 1 câu
+
+                utterance.onend = () => {
+                    clearTimeout(fallbackTimer);
+                    resolve();
+                }
+
+                synth.speak(utterance);
+            });
+        }
+
+        function stopAudio() {
+            isPlaying = false;
+            synth.cancel();
+            updateStatus("⏹ Đã dừng", 'stopped');
+            document.getElementById('playBtn').classList.remove('opacity-75', 'cursor-not-allowed');
+        }
+
+        function sleep(ms) { 
+            return new Promise(resolve => setTimeout(resolve, ms)); 
+        }
+    </script>
+</body>
+</html>
+```
